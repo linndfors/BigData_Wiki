@@ -64,6 +64,24 @@ services:
     volumes:
       - ./:/opt/app
 
+  fastapi:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      - cassandra
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'DESCRIBE KEYSPACES;'"]
+      interval: 30s
+      retries: 10
+      timeout: 10s
+    command: ["sh", "-c", "sleep 30 && uvicorn app:app --host 0.0.0.0 --port 8000"]
+    networks:
+      - spark-network
+
+
 
 networks:
   spark-network:
