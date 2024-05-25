@@ -24,10 +24,13 @@ def wait_for_cassandra():
 
 session = wait_for_cassandra()
 
+
+### Category B
+
 def get_pages_for_each_domain(session):
     now = datetime.now()
 
-    now = now + timedelta(hours=7)
+    now = now + timedelta(hours=2)
 
     end_time = now - timedelta(hours=1)
     start_time = now - timedelta(hours=7)
@@ -47,38 +50,29 @@ def get_pages_for_each_domain(session):
             WHERE created_at >= '{start_time}' AND created_at < '{end_time}' AND user_is_bot = false
             ALLOW FILTERING;
         """
-        # prepared = session.prepare(query)
         result = session.execute(query)
+        result_query= list(result)
+        aggregated_data = defaultdict(dict)
 
-        aggregated_data = {}
-        for row in result:
-            aggregated_data[row.page_id] = row.domain
+        for created_at, domain, page_id in result_query:
+            hour = created_at.strftime('%Y-%m-%d %H:00:00')
+            if hour not in aggregated_data:
+                aggregated_data[hour] = {}
+            if domain not in aggregated_data[hour]:
+                aggregated_data[hour][domain] = 0
+            aggregated_data[hour][domain] += 1
 
-        return aggregated_data
+        output = []
+        for hour, domains in sorted(aggregated_data.items()):
+            entry = {
+                "time_start": hour,
+                "time_end": (datetime.strptime(hour, '%Y-%m-%d %H:00:00') + timedelta(hours=1)).strftime('%Y-%m-%d %H:00:00'),
+                "statistics": [{domain: count} for domain, count in domains.items()]
+            }
+            output.append(entry)
 
-        # for row in result:
-        #     created_at, domain, page_id = row
-        #     hour = created_at.strftime('%Y-%m-%d %H:00:00')
+        return output
 
-        #     if hour not in aggregated_data:
-        #         aggregated_data[hour] = {}
-
-        #     if domain not in aggregated_data[hour]:
-        #         aggregated_data[hour][domain] = 0
-
-        #     aggregated_data[hour][domain] += 1  # Count each page_id
-
-        # Format the output
-        # output = []
-        # for hour, domains in sorted(aggregated_data.items()):
-        #     entry = {
-        #         "time_start": hour,
-        #         "time_end": (datetime.strptime(hour, '%Y-%m-%d %H:00:00') + timedelta(hours=1)).strftime('%Y-%m-%d %H:00:00'),
-        #         "statistics": [{"domain": domain, "count": count} for domain, count in domains.items()]
-        #     }
-        #     output.append(entry)
-
-        # return output
 
     except Exception as e:
         print(f"Error retrieving reviews from Cassandra: {e}")
@@ -86,17 +80,129 @@ def get_pages_for_each_domain(session):
         time.sleep(5)
         return []
 
-@app.get("/test")
-def testing():
-    return JSONResponse(content=[1, 2, 3, 4, 5])
+def get_pages_for_domain_by_bots(session):
+    now = datetime.now()
+
+    now = now + timedelta(hours=2)
+
+    end_time = now - timedelta(hours=1)
+    start_time = now - timedelta(hours=7)
+
+    end_time = end_time.strftime("%Y-%m-%d %H:%M:%S.%f+0000")
+    start_time = start_time.strftime("%Y-%m-%d %H:%M:%S.%f+0000")
+
+    print()
+    print("Current time (now):", now)
+    print("Start time (7 hours ago):", start_time)
+    print("End time (1 hour ago):", end_time)
+
+    try:
+        query = f"""
+            SELECT created_at, domain, page_id
+            FROM created_pages
+            WHERE created_at >= '{start_time}' AND created_at < '{end_time}' AND user_is_bot = true
+            ALLOW FILTERING;
+        """
+        result = session.execute(query)
+        result_query= list(result)
+        aggregated_data = defaultdict(dict)
+
+        for created_at, domain, page_id in result_query:
+            hour = created_at.strftime('%Y-%m-%d %H:%M:00')
+            if hour not in aggregated_data:
+                aggregated_data[hour] = {}
+            if domain not in aggregated_data[hour]:
+                aggregated_data[hour][domain] = 0
+            aggregated_data[hour][domain] += 1
+
+        output = []
+        for hour, domains in sorted(aggregated_data.items()):
+            entry = {
+                "time_start": hour,
+                "time_end": (datetime.strptime(hour, '%Y-%m-%d %H:%M:00') + timedelta(minutes=6)).strftime('%Y-%m-%d %H:%M:00'),
+                "statistics": [{"domain": domain, "created_by_bots": count} for domain, count in domains.items()]
+            }
+            output.append(entry)
+
+        return output
+
+
+    except Exception as e:
+        print(f"Error retrieving reviews from Cassandra: {e}")
+        print("Retrying in 5 seconds...")
+        time.sleep(5)
+        return []
+
 
 @app.get("/get_pages_for_domain")
-def read_reviews_by_product():
-    reviews = get_pages_for_each_domain(session)
-    if not reviews:
-        raise HTTPException(status_code=404, detail="Reviews not found")
-    return JSONResponse(content=reviews)
+def read_domains_count():
+    pages = get_pages_for_each_domain(session)
+    if not pages:
+        raise HTTPException(status_code=404, detail="Results not found")
+    return JSONResponse(content=pages)
 
+
+@app.get("/get_pages_for_domain_by_bots")
+def read_pages_for_domain_by_bots():
+    pages = get_pages_for_domain_by_bots(session)
+    if not pages:
+        raise HTTPException(status_code=404, detail="Results not found")
+    return JSONResponse(content=pages)
+
+
+
+@app.get("/top_users")
+async def get_top_users():
+    now = datetime.now()
+
+    now = now + timedelta(hours=2)
+
+    end_time = now - timedelta(hours=1)
+    start_time = now - timedelta(hours=7)
+
+    end_time_str = end_time.strftime("%Y-%m-%d %H:%M:%S.%f+0000")
+    start_time_str = start_time.strftime("%Y-%m-%d %H:%M:%S.%f+0000")
+
+    print("Current time (now):", now)
+    print("Start time (7 hours ago):", start_time)
+    print("End time (1 hour ago):", end_time)
+
+    try:
+        query = f"""
+            SELECT user_id, user_text, page_title
+            FROM for_user
+            WHERE created_at >= '{start_time_str}' AND created_at < '{end_time_str}'
+            ALLOW FILTERING;
+        """
+        result = session.execute(query)
+        result_query = list(result)
+
+        user_data = defaultdict(list)
+
+        for user_id, user_text, page_title in result_query:
+            user_data[(user_id, user_text)].append(page_title)
+
+        top_users = sorted(user_data.items(), key=lambda item: len(item[1]), reverse=True)[:20]
+
+        output = []
+        for (user_id, user_text), pages in top_users:
+            output.append({
+                "user_id": user_id,
+                "user_name": user_text,
+                "start_time": start_time.strftime("%Y-%m-%d %H:%M:%S"),
+                "end_time": end_time.strftime("%Y-%m-%d %H:%M:%S"),
+                "pages": pages,
+                "number_of_pages": len(pages)
+            })
+
+        return output
+
+    except Exception as e:
+        print(f"Error retrieving data from Cassandra: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+
+### Category A
 
 @app.get("/domains")
 async def get_domains():
