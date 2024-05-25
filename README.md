@@ -91,8 +91,11 @@ docker run --network bigdata_wiki_spark-network wikiapp
 ]
 ```
 Result:
-![A_1.1.jpeg](imgs/A_1.1.jpeg)
-![A_1.2.jpeg](imgs/A_1.2.jpeg)
+
+![alt text](imgs/image.png)
+![alt text](imgs/image-2.png)
+![alt text](imgs/image-3.png)
+![alt text](imgs/image-4.png)
 
 2. Return the statistics about the number of pages created by bots for each of the domains for the last 6 hours, excluding the last hour. The response example:
 ```json
@@ -101,15 +104,15 @@ Result:
  “statistics”: [{“domain”: “fr.wikisource.org”, “created_by_bots” : 312}, {“domain”: “nl.wikipedia.org”, “created_by_bots”: 109}, ... ]}
 ```
 Result:
-
+![alt text](imgs/A2.png)
 
 3. Return Top 20 users that created the most pages during the last 6 hours, excluding the last hour. The response should contain user name, user id, start and end time, the list of the page titles, and the number of pages created.
 
-
+Results:
+![alt text](imgs/A3.png)
 
 #### Category B:
 1. Return the list of existing domains for which pages were created.
-
 ![B_1.jpeg](imgs/B_1.jpeg)
 
 2. Return all the pages which were created by the user with a specified user_id.
@@ -118,15 +121,15 @@ Result:
 
 3. Return the number of articles created for a specified domain.
 
-![B_3.jpeg](imgs/B_3.jpeg)
+![alt text](imgs/B3.png)
 
 4. Return the page with the specified page_id
 
-
+![alt text](imgs/B4.png)
 
 5. Return the id, name, and the number of created pages of all the users who created at least one page in a specified time range.
 
-![B_5.jpeg](imgs/B_5.jpeg)
+![alt text](imgs/B5.png)
 
 ## Conclusions
 This project was a valuable experience in applying and consolidating the skills and knowledge gained from our course. 
