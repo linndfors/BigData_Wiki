@@ -110,7 +110,8 @@ Result:
 3. Return Top 20 users that created the most pages during the last 6 hours, excluding the last hour. The response should contain user name, user id, start and end time, the list of the page titles, and the number of pages created.
 
 Results:
-![alt text](imgs/A3.png)
+<img width="1059" alt="image" src="https://github.com/linndfors/BigData_Wiki/assets/91615532/ace20dd1-69b6-4a00-ae18-1772f22399bf">
+
 
 #### Category B:
 1. Return the list of existing domains for which pages were created.
