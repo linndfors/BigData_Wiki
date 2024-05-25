@@ -20,7 +20,8 @@ The architecture depicted in the diagram represents a data processing pipeline i
 The data originates from a WIKI SOURCE and is initially ingested into an Apache Kafka topic designated as the input topic. Apache Spark Streaming then processes this data in real-time and publishes the processed data to another Kafka topic. A second instance of Spark Streaming consumes the data from this processed topic for further transformation. The results are stored in a Cassandra database. Finally, a REST API allows users to interact with the system and retrieve the processed data from Cassandra.
 
 ## Data Model
-![DataModel.png](imgs/DataModel.png)
+![image](https://github.com/linndfors/BigData_Wiki/assets/91615532/1d2faa36-dd7b-4cb6-8ff1-824bd7f5f914)
+
 As you can see, for Category A and Category B requests we used Cassandra database for its ability to handle high write throughput, ensuring high availability and fault tolerance in real-time data streaming applications. Also, because of its distributed architecture, which allows horizontal scaling, we could manage large volumes of continuous data efficiently.
 
 ## Usage
