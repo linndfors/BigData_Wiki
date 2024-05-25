@@ -122,7 +122,8 @@ Results:
 
 3. Return the number of articles created for a specified domain.
 
-![alt text](imgs/B3.png)
+<img width="1076" alt="image" src="https://github.com/linndfors/BigData_Wiki/assets/91615532/539d53cd-5740-4cc2-bc2d-c39510365aac">
+
 
 4. Return the page with the specified page_id
 
