@@ -225,7 +225,21 @@ async def get_number_of_pages_by_domain(domain: str):
         return JSONResponse(content=result_query)
     else:
         raise HTTPException(status_code=404, detail="Pages Not Found for a specified domain")
-    
+
+
+@app.get("/pages/{page_id}")
+async def get_page_by_id(page_id: str):
+    query = f"SELECT page_title FROM pages WHERE page_id = '{page_id}';"
+    result_query = session.execute(query)
+    if not result_query:
+        raise HTTPException(status_code=404, detail="Results not found")
+    result_query = list(result_query)
+
+    if len(result_query) != 0:
+        result_query = {"page_id": page_id, "page_title": result_query[0][0]}
+        return JSONResponse(content=result_query)
+    else:
+        raise HTTPException(status_code=404, detail="Pages Not Found for a specified page_id")
 
 @app.get("/pages")
 async def get_page_user_info(start_date: datetime, end_date:datetime):
