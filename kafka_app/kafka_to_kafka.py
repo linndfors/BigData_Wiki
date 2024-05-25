@@ -83,12 +83,6 @@ selected_df = flattened_df.select(
     col("performer.user_text")
 )
 
-# filtered_df = selected_df.filter(
-#     (col("domain").isin("en.wikipedia.org", "www.wikidata.org", "commons.wikimedia.org")) &
-#     (col("user_is_bot") == False)
-# )
-
-# filtered_df = filtered_df.drop("user_is_bot")
 
 query = selected_df \
     .selectExpr("to_json(struct(*)) AS value") \

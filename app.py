@@ -27,95 +27,6 @@ session = wait_for_cassandra()
 
 ### Category B
 
-def get_pages_for_each_domain(session):
-    now = datetime.now()
-    # add 2 hours, to work in EEST timezone
-    now = now + timedelta(hours=2)
-
-    end_time = now - timedelta(hours=1)
-    start_time = now - timedelta(hours=7)
-
-    end_time = end_time.strftime("%Y-%m-%d %H:%M:%S.%f+0000")
-    start_time = start_time.strftime("%Y-%m-%d %H:%M:%S.%f+0000")
-
-    print("Current time (now):", now)
-    print("Start time (7 hours ago):", start_time)
-    print("End time (1 hour ago):", end_time)
-
-    query = f"""
-        SELECT created_at, domain, page_id
-        FROM created_pages
-        WHERE created_at >= '{start_time}' AND created_at < '{end_time}' AND user_is_bot = false
-        ALLOW FILTERING;
-    """
-    result = session.execute(query)
-    result_query= list(result)
-    aggregated_data = defaultdict(dict)
-
-    for created_at, domain, page_id in result_query:
-        hour = created_at.strftime('%Y-%m-%d %H:00:00')
-        if hour not in aggregated_data:
-            aggregated_data[hour] = {}
-        if domain not in aggregated_data[hour]:
-            aggregated_data[hour][domain] = 0
-        aggregated_data[hour][domain] += 1
-
-    output = []
-    for hour, domains in sorted(aggregated_data.items()):
-        entry = {
-            "time_start": hour,
-            "time_end": (datetime.strptime(hour, '%Y-%m-%d %H:00:00') + timedelta(hours=1)).strftime('%Y-%m-%d %H:00:00'),
-            "statistics": [{domain: count} for domain, count in domains.items()]
-        }
-        output.append(entry)
-
-    return output
-
-
-def get_pages_for_domain_by_bots(session):
-    now = datetime.now()
-
-    now = now + timedelta(hours=2)
-
-    end_time = now - timedelta(hours=1)
-    start_time = now - timedelta(hours=7)
-
-    end_time = end_time.strftime("%Y-%m-%d %H:%M:%S.%f+0000")
-    start_time = start_time.strftime("%Y-%m-%d %H:%M:%S.%f+0000")
-
-    print("Current time (now):", now)
-    print("Start time (7 hours ago):", start_time)
-    print("End time (1 hour ago):", end_time)
-
-    query = f"""
-        SELECT created_at, domain, page_id
-        FROM created_pages
-        WHERE created_at >= '{start_time}' AND created_at < '{end_time}' AND user_is_bot = true
-        ALLOW FILTERING;
-    """
-    result = session.execute(query)
-    result_query= list(result)
-    aggregated_data = defaultdict(dict)
-
-    for created_at, domain, page_id in result_query:
-        hour = created_at.strftime('%Y-%m-%d %H:%M:00')
-        if hour not in aggregated_data:
-            aggregated_data[hour] = {}
-        if domain not in aggregated_data[hour]:
-            aggregated_data[hour][domain] = 0
-        aggregated_data[hour][domain] += 1
-
-    output = []
-    for hour, domains in sorted(aggregated_data.items()):
-        entry = {
-            "time_start": hour,
-            "time_end": (datetime.strptime(hour, '%Y-%m-%d %H:%M:00') + timedelta(minutes=6)).strftime('%Y-%m-%d %H:%M:00'),
-            "statistics": [{"domain": domain, "created_by_bots": count} for domain, count in domains.items()]
-        }
-        output.append(entry)
-
-    return output
-
 @app.get("/top_users")
 def get_top_users():
     now = datetime.now()
@@ -162,9 +73,49 @@ def get_top_users():
     return output
 
 
-@app.get("/get_pages_for_domain")
+@app.get("/get_pages_for_each_domain")
 def read_domains_count():
-    pages = get_pages_for_each_domain(session)
+    now = datetime.now()
+    # add 2 hours, to work in EEST timezone
+    now = now + timedelta(hours=2)
+
+    end_time = now - timedelta(hours=1)
+    start_time = now - timedelta(hours=7)
+
+    end_time = end_time.strftime("%Y-%m-%d %H:%M:%S.%f+0000")
+    start_time = start_time.strftime("%Y-%m-%d %H:%M:%S.%f+0000")
+
+    print("Current time (now):", now)
+    print("Start time (7 hours ago):", start_time)
+    print("End time (1 hour ago):", end_time)
+
+    query = f"""
+        SELECT created_at, domain, page_id
+        FROM created_pages
+        WHERE created_at >= '{start_time}' AND created_at < '{end_time}' AND user_is_bot = false
+        ALLOW FILTERING;
+    """
+    result = session.execute(query)
+    result_query= list(result)
+    aggregated_data = defaultdict(dict)
+
+    for created_at, domain, page_id in result_query:
+        hour = created_at.strftime('%Y-%m-%d %H:00:00')
+        if hour not in aggregated_data:
+            aggregated_data[hour] = {}
+        if domain not in aggregated_data[hour]:
+            aggregated_data[hour][domain] = 0
+        aggregated_data[hour][domain] += 1
+
+    pages = []
+    for hour, domains in sorted(aggregated_data.items()):
+        entry = {
+            "time_start": hour,
+            "time_end": (datetime.strptime(hour, '%Y-%m-%d %H:00:00') + timedelta(hours=1)).strftime('%Y-%m-%d %H:00:00'),
+            "statistics": [{domain: count} for domain, count in domains.items()]
+        }
+        pages.append(entry)
+
     if not pages:
         raise HTTPException(status_code=404, detail="Results not found")
     return JSONResponse(content=pages)
@@ -172,7 +123,47 @@ def read_domains_count():
 
 @app.get("/get_pages_for_domain_by_bots")
 def read_pages_for_domain_by_bots():
-    pages = get_pages_for_domain_by_bots(session)
+    now = datetime.now()
+
+    now = now + timedelta(hours=2)
+
+    end_time = now - timedelta(hours=1)
+    start_time = now - timedelta(hours=7)
+
+    end_time = end_time.strftime("%Y-%m-%d %H:%M:%S.%f+0000")
+    start_time = start_time.strftime("%Y-%m-%d %H:%M:%S.%f+0000")
+
+    print("Current time (now):", now)
+    print("Start time (7 hours ago):", start_time)
+    print("End time (1 hour ago):", end_time)
+
+    query = f"""
+        SELECT created_at, domain, page_id
+        FROM created_pages
+        WHERE created_at >= '{start_time}' AND created_at < '{end_time}' AND user_is_bot = true
+        ALLOW FILTERING;
+    """
+    result = session.execute(query)
+    result_query= list(result)
+    aggregated_data = defaultdict(dict)
+
+    for created_at, domain, page_id in result_query:
+        hour = created_at.strftime('%Y-%m-%d %H:00:00')
+        if hour not in aggregated_data:
+            aggregated_data[hour] = {}
+        if domain not in aggregated_data[hour]:
+            aggregated_data[hour][domain] = 0
+        aggregated_data[hour][domain] += 1
+
+    pages = []
+    for hour, domains in sorted(aggregated_data.items()):
+        entry = {
+            "time_start": hour,
+            "time_end": (datetime.strptime(hour, '%Y-%m-%d %H:00:00') + timedelta(hours=6)).strftime('%Y-%m-%d %H:00:00'),
+            "statistics": [{"domain": domain, "created_by_bots": count} for domain, count in domains.items()]
+        }
+        pages.append(entry)
+
     if not pages:
         raise HTTPException(status_code=404, detail="Results not found")
     return JSONResponse(content=pages)

@@ -50,9 +50,10 @@ docker ps
 ```bash
 ./create-topics.sh
 
-./docker-create-table.sh
-
 ./build-containers.sh
+
+# wait until cassandra started
+./docker-create-table.sh
 ```
 6. Open three additional terminal windows:
 ```bash
