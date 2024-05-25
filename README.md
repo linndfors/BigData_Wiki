@@ -18,6 +18,10 @@ The main goal of this homework is to learn how to write programs for data proces
 ```docker-compose up -d```\
 ```docker ps```\
 ![alt text](imgs/image-4.png)
+
+docker-compose build
+
+
 5. Create topics\
 ```./create-topics.sh```
 

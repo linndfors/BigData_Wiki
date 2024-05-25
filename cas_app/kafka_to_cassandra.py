@@ -43,6 +43,11 @@ df_2 = df.select("page_id",
     "created_at",
     "page_title")
 
+df_3 = df.select("page_id",
+    "domain", "user_id",
+    "created_at",
+    "page_title")
+
 query = df_1.writeStream \
     .format("org.apache.spark.sql.cassandra") \
     .option("keyspace", "fancy_keyspace") \
@@ -57,5 +62,13 @@ query2 = df_2.writeStream \
     .option("checkpointLocation", "/tmp/checkpoints/kafka_to_cassandra_2") \
     .start()
 
+query3 = df_3.writeStream \
+    .format("org.apache.spark.sql.cassandra") \
+    .option("keyspace", "fancy_keyspace") \
+    .option("table", "pages") \
+    .option("checkpointLocation", "/tmp/checkpoints/kafka_to_cassandra_3") \
+    .start()
+
 query2.awaitTermination()
+query3.awaitTermination()
 query.awaitTermination()
