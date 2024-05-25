@@ -77,19 +77,20 @@ flattened_df = parsed_df.select("data.*")
 selected_df = flattened_df.select(
     col("meta.domain").alias("domain"),
     col("meta.dt").alias("created_at"),
-    col("page_title"),
+    col("page_id"), col ("page_title"),
+    col("performer.user_is_bot"),
     col("performer.user_id"),
-    col("performer.user_is_bot")
+    col("performer.user_text")
 )
 
-filtered_df = selected_df.filter(
-    (col("domain").isin("en.wikipedia.org", "www.wikidata.org", "commons.wikimedia.org")) &
-    (col("user_is_bot") == False)
-)
+# filtered_df = selected_df.filter(
+#     (col("domain").isin("en.wikipedia.org", "www.wikidata.org", "commons.wikimedia.org")) &
+#     (col("user_is_bot") == False)
+# )
 
-filtered_df = filtered_df.drop("user_is_bot")
+# filtered_df = filtered_df.drop("user_is_bot")
 
-query = filtered_df \
+query = selected_df \
     .selectExpr("to_json(struct(*)) AS value") \
     .writeStream \
     .format("kafka") \

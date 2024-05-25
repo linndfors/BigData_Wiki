@@ -14,8 +14,11 @@ spark = SparkSession.builder \
 schema = StructType() \
     .add("domain", StringType()) \
     .add("created_at", StringType()) \
-    .add("page_title", StringType()) \
-    .add("user_id", IntegerType())
+    .add("page_id", StringType()) \
+    .add("user_text", StringType ()) \
+    .add("user_id", StringType()) \
+    .add("user_is_bot", StringType()) \
+    .add("page_title", StringType())
 
 df = spark \
     .readStream \
@@ -30,11 +33,42 @@ df = df.select(from_json(col("value").cast("string"), schema).alias("data")).sel
 
 df = df.withColumn("created_at", col("created_at").cast(TimestampType()))
 
-query = df.writeStream \
+df_1 = df.select("page_id",
+    "user_is_bot",
+    "created_at",
+    "domain")
+
+df_2 = df.select("page_id",
+    "user_text", "user_id",
+    "created_at",
+    "page_title")
+
+df_3 = df.select("page_id",
+    "domain", "user_id",
+    "created_at",
+    "page_title")
+
+query = df_1.writeStream \
     .format("org.apache.spark.sql.cassandra") \
-    .option("keyspace", "hw12_nahurna") \
-    .option("table", "main_table") \
+    .option("keyspace", "fancy_keyspace") \
+    .option("table", "created_pages") \
     .option("checkpointLocation", "/tmp/checkpoints/kafka_to_cassandra") \
     .start()
 
+query2 = df_2.writeStream \
+    .format("org.apache.spark.sql.cassandra") \
+    .option("keyspace", "fancy_keyspace") \
+    .option("table", "for_user") \
+    .option("checkpointLocation", "/tmp/checkpoints/kafka_to_cassandra_2") \
+    .start()
+
+query3 = df_3.writeStream \
+    .format("org.apache.spark.sql.cassandra") \
+    .option("keyspace", "fancy_keyspace") \
+    .option("table", "pages") \
+    .option("checkpointLocation", "/tmp/checkpoints/kafka_to_cassandra_3") \
+    .start()
+
+query2.awaitTermination()
+query3.awaitTermination()
 query.awaitTermination()
